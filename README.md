@@ -265,4 +265,4 @@ Planned:
 
 # Author
 
-Backend AI engineering learning project.
+Floats, Real name later ;)
