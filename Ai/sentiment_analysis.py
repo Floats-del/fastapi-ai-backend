@@ -1,6 +1,3 @@
-#NOOOOOO MOREEEEE ALTERATION NEEEEDEDDD! (im fully fixed now!)
-
-
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
@@ -41,20 +38,14 @@ class SentimentAnalysis(BaseModel):
         )
     )
     
-    
     explanation: Annotated[str, StringConstraints(max_length=500, strip_whitespace=True)] = Field(
         ..., 
-        description=("Briefly explain why this category was chosen.")
-        )
+        description="Briefly explain why this category was chosen."
+    )
     
-    
-    #makes any in intnet variable a lower!
     @field_validator("sentiment")
     def normalize_intent(cls, v):
         return v.lower()
-
-
-
 
 
 @traceable(name="sentiment_analysis_pipeline")
@@ -67,17 +58,12 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
             error_message="Input text is empty"
         )
     
-    #go read Rephase form extaly here to know why code looks small here lol
     intent_package: APIResponse = await get_user_intent(model, text)
     if not intent_package.success:
-        return intent_package #why not return ApiResponce? well get_user_intent gives us api responce so intent_package is the apiresponce!
-        
+        return intent_package
         
     structured_model = model.with_structured_output(SentimentAnalysis, include_raw=True)
     parser = PydanticOutputParser(pydantic_object=SentimentAnalysis)
-
-
-
 
     examples = [
         {
@@ -163,10 +149,9 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
         "explanation": "The text is a friendly greeting and does not contain meaningful emotional sentiment toward a subject."
     }
     """
-    }]
+        }
+    ]
 
-
-    
     template = r"""
     You are a professional sentiment analysis engine.
 
@@ -222,10 +207,11 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
     """
 
     example_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("human", "{input}"),
-        ("ai", "{output}")
-    ])
+        [
+            ("human", "{input}"),
+            ("ai", "{output}")
+        ]
+    )
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt,
         examples=examples
@@ -234,12 +220,10 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
         [
             ("system", template),
             few_shot_prompt,
-            ("human","""Analyze the sentiment of this content:<content>{text}</content>""")
+            ("human", "Analyze the sentiment of this content:<content>{text}</content>")
         ]
     )
 
-    
-    
     try:
         result = await (prompt | structured_model).ainvoke({"text": text})
     except Exception as e:
@@ -256,13 +240,12 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
                 message="AI processing failed during initial generation"
             ) from e 
     
-    #parsed:
     parsed = getattr(result, "parsed", None) 
     if parsed is None and isinstance(result, dict):
         parsed = result.get("parsed")
     
     if isinstance(parsed, dict):
-        required_keys = {"sentiment", "confidence", "explanation"}
+        required_keys = {"sentiment", "confidence_score", "explanation"}
 
         if not required_keys.issubset(parsed.keys()):
             parsed = None       
@@ -279,7 +262,6 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
             error_message=None
         )
     
-    #raw
     raw = getattr(result, "raw", None)
     if raw is None and isinstance(result, dict):
         raw = result.get("raw")
@@ -291,7 +273,6 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
             error_code="RAW_MISSING",
             error_message="Structured output parsing faild and manual parsing come up empty"
         )
-    
     
     try:
         recovered = await extract_raw_data(raw, parser, model, text, SentimentAnalysis)
@@ -307,7 +288,7 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
         raise AIServiceException( 
             error_code="AI_REPAIR_FAILURE",
             message="AI output recovery process failed"
-            ) from e
+        ) from e
     
     if recovered is None:
         return APIResponse(
@@ -322,4 +303,4 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
         data=recovered,
         error_code=None,
         error_message=None
-    ) 
+    )

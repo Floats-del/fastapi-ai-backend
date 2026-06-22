@@ -1,0 +1,8 @@
+1) currently working on ai.py route once its fully fortifined ill do the same to other routes
+2) plan to add redias and queues
+3) proper google api intigration alongside emial OTP and passwords changing option
+4) adding salt to passwords
+5) token bucket
+6) route locking
+7) jwt revoking
+8) and more 

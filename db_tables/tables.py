@@ -55,20 +55,6 @@ class CommentTable(Base):
 
     post = relationship("PostTable", back_populates="comments")
     commenter = relationship("UserTable", back_populates="comments")
-    """
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE", onupdate="SET_DEFAULT"), nullable=False)
-    #the dtype should match the dtype of foregin key, the ForeigenKey's 1st arg is related table's name .id which is what we 
-        #wanted realtion on!
-    
-    # 2. SQLAlchemy relationship: Links this post to its owner object
-    owner = relationship(
-        "user_table", #class name 
-        back_populates="posts" #link with posts var in above class name
-        
-    ) #Column(Integer, ForeignKey ... is not enough! coz this talks to the db and relationship() tells this to python!
-        #coz in ForeignKey ORM only sees an integer... not much value so we need relationships to tell orm the realtion
-            #vr trying to make via foreginkey
-    """
 
 
 

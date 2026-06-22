@@ -1,15 +1,11 @@
-#NOOOOOO MOREEEEE ALTERATION NEEEEDEDDD! (im fully fixed now!)
-
-
 import json
 from Ai.intent_classifier import IntentUser, get_user_intent
 from langsmith import traceable
 from pydantic import BaseModel, Field, StringConstraints
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
-from typing import Annotated, Any, List
+from typing import Annotated, Any, List, Optional, Union
 from Ai.retry_logic import check_provider_quota, safe_parse
-from typing import List, Optional, Union
 from Ai.raw_and_parsed_clean import extract_parsed_data, extract_raw_data
 from core.exceptions import AIServiceException
 from utils.schemas import APIResponse
@@ -17,27 +13,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
-
 class TitlePackage(BaseModel):
     main_title: Union[str, None] = Field(
-        None,  # Giving it a default of None allows easier instantiation if False
+        None,
         description="The absolute best, catchiest primary title. Set to null if is_appropriate is False."
     )
     variations: List[str] = Field(
         default_factory=list,
         description="Exactly 2 alternative variations. Leave empty if is_appropriate is False."
     )
-    minor_summary: Annotated[str, StringConstraints(max_length=500, strip_whitespace=True)]= Field(
-        None, 
+    minor_summary: Annotated[str, StringConstraints(max_length=500, strip_whitespace=True)] = Field(
+        None,
         description="A brief, 1-2 sentence summary. Set to null if is_appropriate is False."
     )
 
 
-
-@traceable(name="title_generation_pipeline",metadata={"route": "/title"})
+@traceable(name="title_generation_pipeline", metadata={"route": "/title"})
 async def generate_titles(model, text: str) -> APIResponse:
-    
     if not text or not text.strip():
         return APIResponse(
             success=False,
@@ -46,22 +38,13 @@ async def generate_titles(model, text: str) -> APIResponse:
             error_message="Input text is empty"
         )
     
-    #go read Rephase form extaly here to know why code looks small here lol
     intent_package: APIResponse = await get_user_intent(model, text)
     if not intent_package.success:
-        return intent_package #why not return ApiResponce? well get_user_intent gives us api responce so intent_package is the apiresponce!
-    
-    #testing something:
-    # json_model = model.bind(response_format={"type": "json_object"}) one of the methods!
+        return intent_package
     
     structured_model = model.with_structured_output(TitlePackage, include_raw=True)
-    #i stoped using with_structured_output, coz hugging face didnt support, but groq might kme test
-        #also since the iclude_raw is true i can get 100% gurante normal ouput if the JSONification fails
-            #with_structured_output works: when u get model responce hard json extract! if no success i get raw
-                #now if with_structured_output fails ive my og way to fix it ;( --eq(1) 
-    
-    
     parser = PydanticOutputParser(pydantic_object=TitlePackage)
+    
     examples = [
         {
             "input": """
@@ -163,14 +146,14 @@ async def generate_titles(model, text: str) -> APIResponse:
     """
         },
         {
-        "input": """
+            "input": """
     USER CONTENT:
     A software engineering article explaining how database indexing improves query performance by reducing the amount of data searched during retrieval operations.
 
     TASK:
     Generate titles.
     """,
-        "output": """
+            "output": """
     {
         "main_title": "Database Indexing Explained: The Secret Behind Faster Queries",
         "variations": [
@@ -180,7 +163,8 @@ async def generate_titles(model, text: str) -> APIResponse:
         "minor_summary": "An explanation of database indexes and how they optimize query performance by improving data retrieval efficiency."
     }
     """
-    }]
+        }
+    ]
     
     template = r"""
     You are a professional content editor and copywriter specialized in generating high-quality titles.
@@ -216,10 +200,11 @@ async def generate_titles(model, text: str) -> APIResponse:
     """
     
     example_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("human", "{input}"),
-        ("ai", "{output}")
-    ])
+        [
+            ("human", "{input}"),
+            ("ai", "{output}")
+        ]
+    )
     
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt,
@@ -230,7 +215,7 @@ async def generate_titles(model, text: str) -> APIResponse:
         [
             ("system", template),
             few_shot_prompt,
-            ("human","""Generate titles for this content:<content>{text}</content>""")
+            ("human", "Generate titles for this content:<content>{text}</content>")
         ]
     )
     
@@ -250,30 +235,15 @@ async def generate_titles(model, text: str) -> APIResponse:
                 message="AI processing failed during initial generation"
             ) from e 
             
-        
-        
-    #old method:
-    """
-    parsed = result["parsed"]  btw!
-    if isinstance(result["parsed"], TitlePackage) and result.get("parsed"):
-        return result["parsed"] #if with_structured_output woked this this is the pydentic obj!
-        
-        RESKY sometimes when we get raw coz with_structured_output failed the value of result["parsed"]
-        will become None! if will fail!
-    """ 
-    
-    
-    #parsed:
-    parsed = getattr(result, "parsed", None) #the with_structured_output's output 
+    parsed = getattr(result, "parsed", None)
     if parsed is None and isinstance(result, dict):
         parsed = result.get("parsed")
     
     if isinstance(parsed, dict):
-        required_keys = {"main_title", "variations", "minor_summary"} #always check for all keys in service schame above class!
+        required_keys = {"main_title", "variations", "minor_summary"}
 
         if not required_keys.issubset(parsed.keys()):
             parsed = None       
-    #we dont exception here! we allow it to fail so things can go into raw's hand!
     
     if parsed is not None and not isinstance(parsed, (dict, TitlePackage)):
         parsed = None        
@@ -287,10 +257,6 @@ async def generate_titles(model, text: str) -> APIResponse:
             error_message=None
         )        
     
-    
-    
-    
-    #raw:
     raw = getattr(result, "raw", None)
     if raw is None and isinstance(result, dict):
         raw = result.get("raw")
@@ -317,7 +283,7 @@ async def generate_titles(model, text: str) -> APIResponse:
         raise AIServiceException( 
             error_code="AI_REPAIR_FAILURE",
             message="AI output recovery process failed"
-            ) from e
+        ) from e
         
     if recovered is None:
         return APIResponse(

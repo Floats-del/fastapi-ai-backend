@@ -1,8 +1,5 @@
-#NOOOOOO MOREEEEE ALTERATION NEEEEDEDDD! (im fully fixed now!)
-
-
 from langsmith import traceable
-from pydantic import BaseModel, Field, StringConstraints, constr
+from pydantic import BaseModel, Field, StringConstraints
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from typing import Annotated, List
@@ -24,30 +21,17 @@ class SummaryModel(BaseModel):
         )
     )
     
-    
-    #this method is legacy better way is bellow this commeted field
-    # topic: constr(max_length=20, strip_whitespace=True) = Field(
-    #     ...,
-    #     description="The primary overarching topic, theme, or category of the text (e.g., 'Finance', 'AI Safety', 'Health'). Keep it concise, 1-3 words."
-    #)
-    
-    
     topic: Annotated[str, StringConstraints(max_length=20, strip_whitespace=True)] = Field(
         ...,
         description="The primary overarching topic, theme, or category of the text (e.g., 'Finance', 'AI Safety', 'Health'). Keep it concise, 1-3 words."
     )
     
-    
-    
     confidence_score: float = Field(
         ...,
         description="A value between 0.0 and 1.0 indicating how confident you are that this summary accurately reflects the source material without hallucinations.",
-        ge=0.0,  # Greater than or equal to 0.0
-        le=1.0   # Less than or equal to 1.0
+        ge=0.0,
+        le=1.0
     )
-
-
-
 
 
 @traceable(name="blog_summarization_pipeline")
@@ -60,17 +44,12 @@ async def summry_ai(model, text: str) -> APIResponse:
             error_message="Input text is empty"
         )
 
-    #go read Rephase form extaly here to know why code looks small here lol        
     intent_package: APIResponse = await get_user_intent(model, text)
     if not intent_package.success:
-        return intent_package #why not return ApiResponce? well get_user_intent gives us api responce so intent_package is the apiresponce!
-        
+        return intent_package
         
     structured_model = model.with_structured_output(SummaryModel, include_raw=True)
     parser = PydanticOutputParser(pydantic_object=SummaryModel)
-    
-    
-    
     
     examples = [
         {
@@ -159,8 +138,6 @@ async def summry_ai(model, text: str) -> APIResponse:
         }
     ]    
     
-    
-    
     template = r"""
     You are a professional content summarization engine.
 
@@ -208,10 +185,11 @@ async def summry_ai(model, text: str) -> APIResponse:
     """
     
     example_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("human", "{input}"),
-        ("ai", "{output}")
-    ])
+        [
+            ("human", "{input}"),
+            ("ai", "{output}")
+        ]
+    )
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt,
         examples=examples
@@ -220,7 +198,7 @@ async def summry_ai(model, text: str) -> APIResponse:
         [
             ("system", template),
             few_shot_prompt,
-            ("human","""Summarize this content:<content>{text}</content>""")
+            ("human", "Summarize this content:<content>{text}</content>")
         ]
     )
     try:
@@ -239,7 +217,6 @@ async def summry_ai(model, text: str) -> APIResponse:
                 message="AI processing failed during initial generation"
             ) from e 
     
-    #parsed:
     parsed = getattr(result, "parsed", None) 
     if parsed is None and isinstance(result, dict):
         parsed = result.get("parsed")
@@ -262,7 +239,6 @@ async def summry_ai(model, text: str) -> APIResponse:
             error_message=None
         )
     
-    #raw
     raw = getattr(result, "raw", None)
     if raw is None and isinstance(result, dict):
         raw = result.get("raw")
@@ -289,7 +265,7 @@ async def summry_ai(model, text: str) -> APIResponse:
         raise AIServiceException( 
             error_code="AI_REPAIR_FAILURE",
             message="AI output recovery process failed"
-            ) from e
+        ) from e
     
     if recovered is None:
         return APIResponse(
@@ -304,4 +280,4 @@ async def summry_ai(model, text: str) -> APIResponse:
         data=recovered,
         error_code=None,
         error_message=None
-    )    
+    )

@@ -7,6 +7,8 @@ from typing import List, Optional
 from utils.schemas import PostLikesOutSchema, PostResponseSchema, PostCreateSchema
 from Oauth2 import get_user_jwt_payload
 from sqlalchemy.exc import SQLAlchemyError
+from db_tables.tables import CommentTable
+from utils.schemas import CommentCreateSchema, CommentResponseSchema
 
 router = APIRouter(
     prefix="/posts",
@@ -157,82 +159,6 @@ def update_by_id(
 
 
 
-
-
-from db_tables.tables import CommentTable
-from utils.schemas import CommentCreateSchema, CommentResponseSchema
-
-#EXPLANATION OF create_comment
-"""
-@router.post("/{post_id}/comments", status_code=status.HTTP_201_CREATED, response_model=CommentResponseSchema)
-def create_comment(
-    post_id: int,
-    comment_data: CommentCreateSchema,
-    user_payload = Depends(get_user_jwt_payload),
-    db: Session = Depends(get_db)
-):
-    current_user = user_payload.model_dump()
-    
-    target_post = db.query(PostTable).filter(PostTable.post_id == post_id).first()
-    if not target_post:
-        raise HTTPException(status_code=404, detail="Target post does not exist")
-
-
-    if len(comment_data.text) < 0:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Comment cant be empty")
-    
-    
-    new_comment = CommentTable(
-        text=comment_data.text,
-        user_id=current_user["user_id"],
-        post_id=post_id
-    )
-    
-    db.add(new_comment)
-    db.commit()
-    db.refresh(new_comment)
-    
-    comment_with_user = db.query(CommentTable).options(
-        joinedload(CommentTable.commenter)
-    ).filter(CommentTable.comment_id == new_comment.comment_id).first()
-    r"
-    db.quert(CommentTable) -> so far db call is not made, we got execution object 
-    joinedload(CommentTable.commenter) -> to that excecution object, we add the information to also get
-        commenter column, which is relationship("UserTable", back_populates="comments") which is basically
-            UserTable orm object why we need it? well coz CommentResponseSchema has commenter: UserResponseSchema
-                and UserResponseSchema ->     email: EmailStr, user_id: int, created_at: datetime
-                    meaning this:
-                    {
-                        comment_id: int
-                        post_id: int
-                        user_id: int
-                        text: str
-                        created_at: datetime
-                        
-                        #So far only CommentTable obj will do but for bellow we need relationship stored in 
-                            CommentTable.commenter -> ORM obj for UserTable coz it holds feilds like 
-                                email, user_id, created_at -> and more but pydentic hides them only shows these
-                        
-                        commenter: {
-                                email: EmailStr
-                                user_id: int 
-                                created_at: datetime
-                            }
-                    }
-                        since we have what we needed now and more (dw more will be filtred) 
-                        when we do .first() -> now db call is made
-                        
-                        flow:
-                        first joinedload(CommentTable.commenter) -> goes and does SELECT * FORM UserTable -> ORM obj
-                        then we do SELECT * FROM CommentTable WHERE comment_id = (what_auto_gened)
-                        then select it: LIMIT 1;
-                        
-    now .filter(CommentTable.comment_id == new_comment.comment_id) meaning where CommentTable.comment_id == new_comment.comment_id
-    "
-    
-    
-    return comment_with_user #now since we had more that will be filtered
-"""
 
 
 #no comments create_comment!

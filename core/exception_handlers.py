@@ -43,29 +43,3 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content=jsonable_encoder(response)
     )
-
-
-#how to use:
-"""
-except Exception as e:
-    raise AIServiceException(
-        "AI_SERVICE_FAILURE",
-        "AI processing failed"
-    ) from e
-
-
-we called AIServiceException which inharits form AppException which inhairts form Exception
-teachniqally AIServiceException is Exception and in our code1.py ive:
-
-app.add_exception_handler(
-    Exception, -> see techiqally huh see!
-    global_exception_handler -> the func we wanna run
-)
-
-fastapi automatically class this global_exception_handler and passes AIServiceException() exception that we raised in 2nd paramter
-and FastAPI already has the request object because it was handling that HTTP request from the beginning.!
-so 1st paramter is auto filled!
-"""
-
-
-#NOW WE HAVE WRAPED KNOWN EXCEPTIONS AND UNKNOWN EXCEPTIONS IN gloval_exception_handeler!
