@@ -1,4 +1,4 @@
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)​
 # FastAPI AI Social Backend
 
 A production-oriented backend API built with **FastAPI**, **PostgreSQL**, **SQLAlchemy**, and AI-powered services.
