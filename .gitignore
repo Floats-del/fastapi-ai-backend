@@ -1,0 +1,24 @@
+ai_copy(have comments)_only_reference.py
+notes.txt
+todo.txt
+strutcures.txt
+info.text
+
+
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+G_Env/
+venv/
+.env
+
+# IDE
+.vscode/
+
+# Testing
+.pytest_cache/
+
+# Alembic cache
+*.pyc

@@ -1,0 +1,4 @@
+1) not from video, adding comments 
+2) dropped test_practise folder coz it was just to get to know pyest
+3) adding Ai
+tree /F -> to see sturucture of proj
