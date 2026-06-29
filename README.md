@@ -1,10 +1,10 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)​
-# FastAPI AI Social Backend
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A production-oriented backend API built with **FastAPI**, **PostgreSQL**, **SQLAlchemy**, and AI-powered services.
+# FastAPI AI Backend Platform
 
-This project started as a social network backend and evolved into an AI-integrated platform with standardized AI service handling, authentication, database migrations, and scalable backend patterns.
+A production-oriented backend built with **FastAPI**, **PostgreSQL**, **SQLAlchemy**, and modular AI services.
 
+Originally developed as a social media backend, the project has evolved into an AI-powered backend platform focused on standardized AI service architecture, security, observability, and scalable backend engineering practices.
 
 ---
 
@@ -13,13 +13,14 @@ This project started as a social network backend and evolved into an AI-integrat
 ## Core Backend
 
 - FastAPI REST API
-- PostgreSQL database
+- PostgreSQL
 - SQLAlchemy ORM
-- Alembic database migrations
-- JWT authentication
-- Password hashing using bcrypt
-- CORS configuration
-- Pydantic validation schemas
+- Alembic Database Migrations
+- JWT Authentication
+- OAuth2 Password Flow
+- Password Hashing (bcrypt)
+- Pydantic Validation
+- CORS Configuration
 
 ---
 
@@ -27,18 +28,18 @@ This project started as a social network backend and evolved into an AI-integrat
 
 Implemented:
 
-- User registration
-- User authentication
-- JWT protected routes
-- Create posts
-- Update posts
-- Delete posts
-- Search posts
-- Public/private posts
-- Likes system
-- Comments system
+- User Registration
+- User Authentication
+- JWT Protected Routes
+- Create Posts
+- Update Posts
+- Delete Posts
+- Search Posts
+- Public / Private Posts
+- Likes System
+- Comments System
 
-Database relationships:
+Database Relationships:
 
 - User → Posts (One-to-Many)
 - User ↔ Posts (Many-to-Many through Likes)
@@ -47,61 +48,184 @@ Database relationships:
 
 ---
 
-# AI Integration
+# AI Services
 
-The project contains multiple AI-powered services:
-
-Implemented AI services:
+Implemented AI modules:
 
 - Text Rephrasing
 - Text Summarization
 - Sentiment Analysis
 - AI Title Generation
+- AI Intent Classification
 
+---
 
-## AI Service Architecture
+# AI Pipeline Architecture
 
-All AI services follow a standardized pipeline:
+Every AI service follows the same standardized lifecycle.
 
 ```
+
 Request
-   |
-   v
-AI Service
-   |
-   v
-Model Processing
-   |
-   v
-APIResponse
-   |
-   +----------------+
-   |                |
- Success         Failure
-   |                |
-Return Data     Error Handling
+│
+▼
+Input Validation
+│
+▼
+Intent Classification
+│
+▼
+Deterministic Security Checks
+│
+▼
+LLM Provider
+│
+▼
+Structured Output Parsing
+│
+├───────────────┐
+│               │
+▼               ▼
+Success      Manual Recovery
+│               │
+▼               ▼
+APIResponse  APIResponse
+
 ```
+
+This architecture allows every AI module to behave consistently while remaining resilient to malformed model outputs.
+
+---
+
+# Intent Classification
+
+The AI gateway classifies incoming requests into semantic categories before processing.
+
+Supported intents:
+
+- Rephrase
+- Title Generation
+- Sentiment Analysis
+- Summarization
+- Casual Conversation
+- Security Discussion
+- Malicious Prompt Injection
+- Unknown Input
+
+---
+
+# Prompt Injection Protection
+
+The backend performs layered security checks before AI processing.
+
+Security pipeline:
+
+```
+
+User Input
+│
+▼
+Deterministic Regex Detection
+│
+▼
+LLM Intent Classification
+│
+▼
+Security Validation
+│
+▼
+Accept / Reject
+
+```
+
+Malicious prompt injection attempts are blocked before reaching downstream AI services.
 
 ---
 
 # AI Response Standardization
 
-All AI modules return:
+Every AI service returns the same response contract.
 
 ```python
 APIResponse(
-    success=True/False,
+    success=True,
     data=result,
     error_code=None,
     error_message=None
 )
 ```
 
-This creates a consistent contract between:
+or
 
-- AI services
-- API routes
-- Error handlers
+```python
+APIResponse(
+    success=False,
+    data=None,
+    error_code=...,
+    error_message=...
+)
+```
+
+This creates a consistent interface between:
+
+- AI Services
+- API Routes
+- Exception Handlers
+- Frontend Clients
+
+---
+
+# AI Output Recovery
+
+AI responses are processed using multiple validation stages.
+
+```
+
+LLM Output
+│
+▼
+Structured Parsing
+│
+├─────────────┐
+│             │
+▼             ▼
+Valid      Parsing Failed
+│             │
+▼             ▼
+Return   Manual Recovery
+│             │
+└──────► APIResponse
+
+```
+
+This significantly improves robustness when models return imperfect structured outputs.
+
+---
+
+# Logging Architecture
+
+The backend uses standardized structured logging.
+
+Logging categories include:
+
+- Gateway Logs
+- Service Logs
+- Provider Logs
+- Repair Logs
+- Security Logs
+- Authentication Logs
+- Reservation Logs
+
+Every AI service logs:
+
+- Service lifecycle
+- Provider requests
+- Provider failures
+- Recovery attempts
+- Security events
+- Exceptions
+
+This provides consistent observability across the entire backend.
 
 ---
 
@@ -110,70 +234,72 @@ This creates a consistent contract between:
 Custom exception hierarchy:
 
 ```
+
 Exception
-   |
+│
 AppException
-   |
+│
 AIServiceException
+
 ```
 
-Global exception handling converts application failures into standardized API responses.
+Global exception handlers convert unexpected failures into standardized API responses.
 
-Handled cases:
+Handled cases include:
 
-- AI failures
-- Unknown system errors
-- Invalid AI responses
+- AI Provider Failures
+- Invalid Structured Outputs
+- Recovery Failures
+- Authentication Errors
+- Unknown System Exceptions
 
 ---
 
-# AI Quota System
+# AI Quota Management
 
 Implemented user-level AI usage control.
 
 Features:
 
-- Database tracked usage
-- 24 hour cooldown system
-- Row locking for concurrent requests
-- Prevents quota bypass through race conditions
+- Database-backed quota tracking
+- 24-hour cooldown system
+- Row-level locking
+- Race condition protection
+- Concurrent request safety
 
 Database table:
 
 ```
+
 ai_usage_tracker
+
 ```
 
 ---
 
 # Database
 
-Current tables:
+Current schema:
 
 ```
-users
- |
- +-- posts
- |
- +-- comments
- |
- +-- likes
 
+users
+│
+├── posts
+├── comments
+└── likes
 
 ai_usage_tracker
-```
-
-Database migrations managed through:
 
 ```
-Alembic
-```
+
+Database migrations are managed using Alembic.
 
 ---
 
 # Tech Stack
 
-Backend:
+## Backend
 
 - Python
 - FastAPI
@@ -181,90 +307,108 @@ Backend:
 - PostgreSQL
 - Alembic
 
-Authentication:
+## Authentication
 
 - JWT
 - OAuth2 Password Flow
-- Passlib bcrypt
+- Passlib (bcrypt)
 
-AI:
+## AI
 
-- LLM based processing
-- Structured AI responses
-- AI service abstraction
+- LLM-based Processing
+- LangChain
+- Structured Output Parsing
+- Intent Classification
+- Prompt Injection Detection
+- Automatic Output Recovery
 
 ---
 
 # Project Structure
 
 ```
+
 .
 ├── Ai/
-│   ├── main.py
-│   ├── title_gen.py
-│   ├── summry_ai.py
-│   ├── sentiment_analysis_ai.py
-│   └── Ai_rephrase_content.py
+│   ├── intent_classifier.py
+│   ├── rephraser.py
+│   ├── summary.py
+│   ├── sentiment_analysis.py
+│   ├── title_generator.py
+│   ├── raw_and_parsed_clean.py
+│   └── retry_logic.py
 │
 ├── routers/
 │   ├── ai.py
-│   ├── posts.py
+│   ├── auth.py
 │   ├── users.py
-│   ├── likes.py
-│   └── auth.py
-│
-├── db_tables/
-│   └── tables.py
+│   ├── posts.py
+│   └── likes.py
 │
 ├── core/
 │   ├── exceptions.py
 │   └── exception_handlers.py
 │
+├── db_tables/
+│   └── tables.py
+│
 ├── utils/
+│   ├── logging/
 │   ├── schemas.py
-│   ├── config.py
-│   └── hashing.py
+│   ├── hashing.py
+│   └── config.py
 │
 ├── alembic/
-│
+├── actual_test/
+├── code1.py
 ├── db.py
-├── Oauth2.py
-└── code1.py
+└── Oauth2.py
+
 ```
 
 ---
 
 # Current Development Status
 
-✅ Database architecture completed  
-✅ Authentication completed  
-✅ Social features completed  
-✅ AI services standardized  
-✅ Custom exception system added  
-✅ AI quota management implemented  
+Completed:
 
-Currently working on:
+- ✅ FastAPI Backend
+- ✅ Authentication
+- ✅ Social Features
+- ✅ AI Service Architecture
+- ✅ Intent Classification
+- ✅ Prompt Injection Detection
+- ✅ AI Response Standardization
+- ✅ Structured Logging
+- ✅ Custom Exception Framework
+- ✅ AI Output Recovery
+- ✅ AI Quota Management
 
-- Standardizing remaining routes
-- Moving older routes to the new error handling pattern
-- Further AI pipeline improvements
+Currently Working On:
+
+- Standardizing remaining AI services
+- Shared AI infrastructure refactoring
+- Route cleanup
+- Improved observability
+- Production readiness
 
 ---
 
-# Future Improvements
+# Planned Improvements
 
-Planned:
-
-- Fully async route migration
-- API gateway pattern
-- More AI modules
-- RAG integration
-- AI agents
-- Better observability/logging
-- Production deployment
+- Docker Support
+- CI/CD Pipeline
+- Multiple AI Provider Support
+- Provider Failover
+- RAG Integration
+- AI Agent Framework
+- Metrics Dashboard
+- Distributed Tracing
+- Production Deployment
+- Kubernetes Support
 
 ---
 
 # Author
 
-Floats, Real name later ;)
+**Floats** *(Real name coming soon 😉)*
