@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
 
 from db import Base
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Boolean, func
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Boolean, func
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship
+
+from utils.schemas import AIRequestState
 
 class PostTable(Base): 
     __tablename__ = "posts"
@@ -57,21 +59,18 @@ class CommentTable(Base):
     commenter = relationship("UserTable", back_populates="comments")
 
 
-
 class AIUsageTrackerTable(Base):
     __tablename__ = "ai_usage_tracker"
-
+    
     id = Column(Integer, primary_key=True, index=True)
-
-    user_id = Column(
-        Integer,
-        ForeignKey("users.user_id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True
-    )
-
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), unique=True, nullable=False)
+    
     last_used = Column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now()
     )
+    
+    # NEW FIELDS FOR STEP 0
+    state = Column(Enum(AIRequestState), default=AIRequestState.COMPLETED, nullable=False)
+    current_request_id = Column(String, nullable=True) # Tracks the active flight ID

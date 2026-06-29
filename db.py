@@ -1,4 +1,3 @@
-#async:
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     AsyncSession,
@@ -40,4 +39,4 @@ Base = declarative_base()
 
 async def get_db():
     async with AsyncSessionLocal() as session:
-        yield session #does the same process as in no async get_db() function
+        yield session

@@ -1,3 +1,5 @@
+import enum
+
 from pydantic import BaseModel, Field, EmailStr, StringConstraints
 from datetime import datetime
 from typing import Annotated, Any, Optional, Literal, List, Union
@@ -130,8 +132,61 @@ class Title_genOut_Route(BaseModel):
 
 
 #API
+#overall server responce
 class APIResponse(BaseModel):
     success: bool
     data: Any | None = None #basically the pydentic will be inside it!
     error_code: str | None = None
     error_message: str | None = None
+
+
+
+
+#gateways:
+#ai gatways:
+class AIGatewayContext(BaseModel):
+    user_id: int
+    request_id: str
+
+
+
+
+#logging:
+#logging schema
+from utils.logging.logEvents import BaseLogEvent
+class LogContext(BaseModel):
+    event: BaseLogEvent #i accept any of said classes child! aka Enum obj of that class! since BaseLogEvent inharits form Enum so ez!
+
+    # Correlation
+    request_id: str | None = None
+    user_id: int | None = None
+
+    # Location
+    route: str | None = None
+    function: str | None = None
+
+    # AI
+    provider: str = Field(default="groq")
+    model: str = Field(
+        default="Llama-3.3-70B-Versatile"
+    )
+
+    # Performance
+    latency_ms: int | None = None
+
+    # Recovery
+    repair_used: bool | None = Field(default=False)
+
+    # Errors
+    exception: str | None = None
+    exception_type: str | None = None #used alongside where we did exception=str(e) then we do exception_type=type(e).__name__
+        #where .__name__ tell which kind of exception obj ;)
+
+
+
+#helper classes:
+#helper class for AiUsageTrackerTable, (what if groq's server down? mine will throw 500 and since as soon as route called due to dependacy user's 24 gone, now 500 form groq and user get nothing) handler
+class AIRequestState(str, enum.Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
