@@ -1,13 +1,7 @@
 import logging
-from fastapi import HTTPException, status
-from langsmith import traceable
-from pydantic import field_validator, model_validator, BaseModel, Field
 from langchain_core.exceptions import OutputParserException 
-from typing import List, Literal
-from utils.schemas import APIResponse
-
-logger = logging.getLogger(__name__)
-
+from typing import List
+from langsmith import traceable
 
 def is_provider_limit_error(exception: Exception) -> bool:
     err_msg = str(exception).lower()
@@ -35,7 +29,7 @@ def clean_json_string(raw_str):
     return raw_str[start_idx:end_idx + 1]
 
 
-@traceable(name="safe_parse_3retry_one")
+@traceable(name="safe_parse_3Retry_one")
 async def safe_parse(raw_output, parser, llm, query, max_retries=3) -> object | None:
     output = raw_output
 
@@ -56,7 +50,6 @@ async def safe_parse(raw_output, parser, llm, query, max_retries=3) -> object | 
             return parser.parse(current_str)
         except OutputParserException as e:
             if attempt == max_retries - 1:
-                logger.warning(f"Parsing failed after {max_retries} attempts: {e}")
                 return None
 
             repair_prompt = f"""
@@ -83,10 +76,6 @@ async def safe_parse(raw_output, parser, llm, query, max_retries=3) -> object | 
                 output = await llm.ainvoke(repair_prompt)
             except Exception as e:
                 if check_provider_quota(e):
-                    logger.error(f"Upstream AI Provider Quota Blown during JSON repair: {e}")
                     return None
                     
-    logger.error(f"Unexpected repair failure: {e}")
     return None
-
-
