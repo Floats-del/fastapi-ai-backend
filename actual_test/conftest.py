@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from Oauth2 import create_access_token
 from code1 import app 
 from db import Base, get_db
-from routers import users
+from routers.users import users_routes
 from utils.config import settings
 from db_tables.tables import PostTable
 
@@ -17,7 +17,7 @@ DATABASE_URL = (
 engine = create_engine(DATABASE_URL, pool_size=20, max_overflow=10)
 Testing_SessionLocal = sessionmaker(autoflush=False, autocommit=False, bind=engine) 
 
-app.include_router(router=users.router)
+app.include_router(router=users_routes.router)
 
 
 @pytest.fixture(name="session")

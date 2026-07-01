@@ -1,3 +1,6 @@
+#NOOOOOO MOREEEEE ALTERATION NEEEEDEDDD! (im fully fixed now!)
+
+
 from Ai.intent_classifier import get_user_intent
 from langsmith import traceable
 from pydantic import BaseModel, Field, StringConstraints
@@ -10,14 +13,15 @@ from Ai.raw_and_parsed_clean import extract_parsed_data, extract_raw_data
 from core.exceptions import AIServiceException
 from utils.schemas import APIResponse
 
+# Standardized Telemetry & Error Enums Injection
 from utils.logging.logEvents import ProviderLog, RepairLog, SecurityLog, ServiceLog
-from Ai.helper_log import log_state, LogState
-from APIResponce_error_code_enum import USER_ERROR_CODES, SYSTEM_ERROR_CODES
+from utils.logging.helper_log import log_state, LogState
+from utils.APIResponce_error_code_enum import USER_ERROR_CODES, SYSTEM_ERROR_CODES
 
 
 class TitlePackage(BaseModel):
     main_title: Union[str, None] = Field(
-        None,
+        None,  # Giving it a default of None allows easier instantiation if False
         description="The absolute best, catchiest primary title. Set to null if is_appropriate is False."
     )
     variations: List[str] = Field(
@@ -28,6 +32,7 @@ class TitlePackage(BaseModel):
         None, 
         description="A brief, 1-2 sentence summary. Set to null if is_appropriate is False."
     )
+
 
 
 @traceable(name="title_generation_pipeline", metadata={"route": "ai/title_gen"})
@@ -46,13 +51,23 @@ async def generate_titles(model, text: str) -> APIResponse:
             error_message="Input text is empty"
         )
     
+    #go read Rephase form extaly here to know why code looks small here lol
     intent_package: APIResponse = await get_user_intent(model, text)
     if not intent_package.success:
         log_state(ServiceLog.AI_SERVICE_FAILED, function="generate_titles")
         log_state(ServiceLog.EXITING_AI_SERVICE, function="generate_titles")
-        return intent_package 
-        
+        return intent_package #why not return ApiResponce? well get_user_intent gives us api responce so intent_package is the apiresponce!
+   
+    
+    #testing something:
+    # json_model = model.bind(response_format={"type": "json_object"}) one of the methods!
     structured_model = model.with_structured_output(TitlePackage, include_raw=True)
+    #i stoped using with_structured_output, coz hugging face didnt support, but groq might kme test
+        #also since the iclude_raw is true i can get 100% gurante normal ouput if the JSONification fails
+            #with_structured_output works: when u get model responce hard json extract!
+            #if no success i get raw
+                #now if with_structured_output fails ive my og way to fix it ;( --eq(1) 
+    
     
     parser = PydanticOutputParser(pydantic_object=TitlePackage)
     examples = [
@@ -155,7 +170,7 @@ async def generate_titles(model, text: str) -> APIResponse:
         "input": """
     USER CONTENT:
     A software engineering article explaining how database indexing improves query performance by reducing the amount of data searched during retrieval operations.
-    TASK:
+        TASK:
     Generate titles.
     """,
         "output": """
@@ -243,17 +258,31 @@ async def generate_titles(model, text: str) -> APIResponse:
             
     log_state(ProviderLog.AI_PROVIDER_SUCCESS, level=LogState.INFO, function="generate_titles")
         
-    parsed = getattr(result, "parsed", None)
+    #old method:
+    """
+    parsed = result["parsed"]  btw!
+    if isinstance(result["parsed"], TitlePackage) and result.get("parsed"):
+        return result["parsed"] #if with_structured_output woked this this is the pydentic obj!
+    RESKY sometimes when we get raw coz with_structured_output failed the value of result["parsed"]
+        will become None!
+    if will fail!
+    """ 
+    
+    
+    #parsed:
+    parsed = getattr(result, "parsed", None) #the with_structured_output's output 
     if parsed is None and isinstance(result, dict):
         parsed = result.get("parsed")
-        
+    
     if isinstance(parsed, dict):
-        required_keys = {"main_title", "variations", "minor_summary"}
+        required_keys = {"main_title", "variations", "minor_summary"} #always check for all keys in service schame above class!
+
         if not required_keys.issubset(parsed.keys()):
-            parsed = None
-            
+            parsed = None       
+    #we dont exception here! we allow it to fail so things can go into raw's hand!
+    
     if parsed is not None and not isinstance(parsed, (dict, TitlePackage)):
-        parsed = None
+        parsed = None        
         
     extracted_parsed: TitlePackage | None = extract_parsed_data(parsed, TitlePackage)
     if extracted_parsed:
@@ -265,36 +294,40 @@ async def generate_titles(model, text: str) -> APIResponse:
             data=extracted_parsed,
             error_code=None,
             error_message=None
-        )
-        
+        )        
+    
     if extracted_parsed is None:
         log_state(RepairLog.AI_REPAIR_INITIALIZED, function="generate_titles")
-        
+    
+    #raw:
     raw = getattr(result, "raw", None)
     if raw is None and isinstance(result, dict):
         raw = result.get("raw")
-        
+    
     if raw is None:
         log_state(ServiceLog.AI_SERVICE_FAILED, function="generate_titles", level=LogState.WARNING)
         log_state(RepairLog.AI_REPAIR_INITIALIZATION_STOPPED, function="generate_titles", level=LogState.WARNING)
         log_state(ServiceLog.EXITING_AI_SERVICE, function="generate_titles", level=LogState.WARNING)
+        
         return APIResponse(
             success=False,
             data=None,
             error_code=SYSTEM_ERROR_CODES.RAW_MISSING.value,
             error_message="Structured output parsing faild and manual parsing come up empty"
         )
-        
+      
     try:
-        log_state(RepairLog.AI_REPAIR_STARTED, function="generate_titles")
-        log_state(RepairLog.AI_REPAIR_IN_PROGRESS, function="generate_titles")
+        log_state(RepairLog.AI_REPAIR_STARTED, function="generate_titles")  
+        log_state(RepairLog.AI_REPAIR_IN_PROGRESS, function="generate_titles") 
         recovered = await extract_raw_data(raw, parser, model, text, TitlePackage)
+        
     except Exception as e:
         if check_provider_quota(e):
             log_state(ServiceLog.AI_MY_QUOTA_REACHED, level=LogState.EXCEPTION, function="generate_titles", exc=e)
-            log_state(RepairLog.AI_REPAIR_PREMATURELY_ENDED, function="generate_titles")
+            log_state(RepairLog.AI_REPAIR_PREMATURELY_ENDED, function="generate_titles")    
             log_state(ServiceLog.AI_SERVICE_FAILED, function="generate_titles")
-            log_state(ServiceLog.EXITING_AI_SERVICE, function="generate_titles")
+            log_state(ServiceLog.EXITING_AI_SERVICE, function="generate_titles")    
+            
             return APIResponse(
                 success=False,
                 data=None,
@@ -304,23 +337,24 @@ async def generate_titles(model, text: str) -> APIResponse:
         else:
             log_state(RepairLog.AI_REPAIR_PREMATURELY_ENDED, level=LogState.EXCEPTION, function="generate_titles", exc=e)
             log_state(ServiceLog.AI_SERVICE_FAILED, function="generate_titles")
-            log_state(ServiceLog.EXITING_AI_SERVICE, function="generate_titles")
-            raise AIServiceException(
+            log_state(ServiceLog.EXITING_AI_SERVICE, function="generate_titles")       
+            raise AIServiceException( 
                 error_code=SYSTEM_ERROR_CODES.AI_SERVICE_FAILURE.value,
                 message="AI output recovery process failed"
-            ) from e
-            
+                ) from e
+       
     if recovered is None:
         log_state(RepairLog.AI_REPAIR_FAILED, function="generate_titles")
         log_state(ServiceLog.AI_SERVICE_FAILED, function="generate_titles")
-        log_state(ServiceLog.EXITING_AI_SERVICE, function="generate_titles")
+        log_state(ServiceLog.EXITING_AI_SERVICE, function="generate_titles")  
+        
         return APIResponse(
             success=False,
             data=None,
             error_code=SYSTEM_ERROR_CODES.RAW_REPAIR_FAILURE.value,
             error_message="Structured output parsing failed and manual recovery returned no result."
         )
-        
+    
     log_state(RepairLog.AI_REPAIR_SUCCESS, function="generate_titles")
     log_state(ServiceLog.AI_SERVICE_COMPLETED, function="generate_titles")
     log_state(ServiceLog.AI_SERVICE_ENDED, function="generate_titles")

@@ -1,0 +1,42 @@
+1) all ai services genral structure excpt the intent classifier:
+AI_SERVICE_STARTED
+        │
+        ▼
+Intent Classifier
+        │
+        ▼
+AI_PROVIDER_REQUEST
+        │
+        ▼
+AI_PROVIDER_SUCCESS
+        │
+   Parsed?
+   ├───────────┐
+   │           │
+ Yes          No
+   │           │
+   ▼           ▼
+Completed   Raw Recovery
+                │
+         ├─────────────┐
+         │             │
+      Success       Failure
+         │             │
+         ▼             ▼
+ Completed     AI_SERVICE_FAILED
+
+
+2) genral work flow of each ai service after llm is called:
+                [ LLM Invocation ]
+                          |
+            Does native JSON parsing work?
+               /                      \
+         (Yes)                        (No)
+         /                              \
+[Extract Parsed Data]         [Fall back to Raw Recovery]
+        |                                |
+[Return APIResponse]           Can custom parser fix it?
+                                  /              \
+                            (Yes)              (No)
+                             /                    \
+                [Return Recovered Data]    [Log Fail & Return Error]

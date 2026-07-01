@@ -178,7 +178,7 @@ class LogContext(BaseModel):
     repair_used: bool | None = Field(default=False)
 
     # Errors
-    exception: str | None = None
+    exception: Exception  | None = None
     exception_type: str | None = None #used alongside where we did exception=str(e) then we do exception_type=type(e).__name__
         #where .__name__ tell which kind of exception obj ;)
 

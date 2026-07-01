@@ -1,6 +1,6 @@
 from utils.schemas import APIResponse
 from core.exceptions import AppException
-from Ai.APIResponce_error_code_enum import SYSTEM_ERROR_CODES
+from utils.APIResponce_error_code_enum import SYSTEM_ERROR_CODES
 
 
 def is_system_failure(result: APIResponse) -> bool:
@@ -13,12 +13,18 @@ def is_system_failure(result: APIResponse) -> bool:
     )
 
 
-def handle_ai_response(result: APIResponse):
-
+def handle_service_response(
+    result: APIResponse,
+    exception_cls: type[AppException] = AppException
+):
     if result.success:
         return result.data
-
-    raise AppException( #basically a data filled responce, http code and APIResponce data 
+    
+    raise exception_cls(
         error_code=result.error_code,
         message=result.error_message
     )
+"""
+Why not JSONResponse? like all other exceptions?
+well look exception_cls is of AppException type which calls global_exception_handler which is JSONResponse so ggz
+"""

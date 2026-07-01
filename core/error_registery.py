@@ -1,5 +1,5 @@
 from fastapi import status
-from Ai.APIResponce_error_code_enum import (
+from utils.APIResponce_error_code_enum import (
     USER_ERROR_CODES,
     SYSTEM_ERROR_CODES
 )
