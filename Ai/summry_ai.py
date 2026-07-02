@@ -1,6 +1,3 @@
-#NOOOOOO MOREEEEE ALTERATION NEEEEDEDDD! (im fully fixed now!)
-
-
 from langsmith import traceable
 from pydantic import BaseModel, Field, StringConstraints
 from langchain_core.output_parsers import PydanticOutputParser
@@ -28,13 +25,6 @@ class SummaryModel(BaseModel):
     )
     
     
-    #this method is legacy better way is bellow this commeted field
-    # topic: constr(max_length=20, strip_whitespace=True) = Field(
-    #     ...,
-    #     description="The primary overarching topic, theme, or category of the text (e.g., 'Finance', 'AI Safety', 'Health'). Keep it concise, 1-3 words."
-    #)
-    
-    
     topic: Annotated[str, StringConstraints(max_length=20, strip_whitespace=True)] = Field(
         ...,
         description="The primary overarching topic, theme, or category of the text (e.g., 'Finance', 'AI Safety', 'Health'). Keep it concise, 1-3 words."
@@ -45,8 +35,8 @@ class SummaryModel(BaseModel):
     confidence_score: float = Field(
         ...,
         description="A value between 0.0 and 1.0 indicating how confident you are that this summary accurately reflects the source material without hallucinations.",
-        ge=0.0,  # Greater than or equal to 0.0
-        le=1.0   # Less than or equal to 1.0
+        ge=0.0, 
+        le=1.0  
     )
 
 
@@ -70,10 +60,10 @@ async def summry_ai(model, text: str) -> APIResponse:
             error_message="Input text is empty"
         )
 
-    #go read Rephase form extaly here to know why code looks small here lol        
+     
     intent_package: APIResponse = await get_user_intent(model, text)
     if not intent_package.success:
-        return intent_package #why not return ApiResponce? well get_user_intent gives us api responce so intent_package is the apiresponce!
+        return intent_package
         
         
     structured_model = model.with_structured_output(SummaryModel, include_raw=True)
@@ -234,7 +224,7 @@ async def summry_ai(model, text: str) -> APIResponse:
         ]
     )
     try:
-        log_state(ProviderLog.AI_PROVIDER_REQUEST, function="summry_ai") #provider cause i call groq's llm 
+        log_state(ProviderLog.AI_PROVIDER_REQUEST, function="summry_ai") 
         log_state(ProviderLog.AI_PROVIDER_IN_PROCESSING, function="summry_ai")
         
         result = await (prompt | structured_model).ainvoke({"text": text})

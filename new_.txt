@@ -7,3 +7,10 @@ new:
 1) fixed logging in all ai services -> which makes the full ai service complete 
 2) fixed logs in custom exception handeling 
 3) fixed ai.py route, since some changes where made to ai services
+
+
+new:
+1) all routes fixed 
+2) sapration of duties achived
+3) logging standardized and implement 
+4) app optmized and standardized

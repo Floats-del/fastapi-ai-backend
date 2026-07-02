@@ -1,7 +1,3 @@
-#NOOOOOO MOREEEEE ALTERATION NEEEEDEDDD! (im fully fixed now!)
-
-
-
 from utils.APIResponce_error_code_enum import USER_ERROR_CODES, SYSTEM_ERROR_CODES
 from typing import Annotated, Any, Literal, Optional
 from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
@@ -15,11 +11,8 @@ from utils.schemas import APIResponse
 from Ai.intent_classifier import  get_user_intent
 from pydantic import ValidationError
 from Ai.raw_and_parsed_clean import extract_raw_data, extract_parsed_data
-from utils.logging.helper_log import log_state, LogState #log_state is functtion which logs, and LogState is an enum class which tells the function to call what log
+from utils.logging.helper_log import log_state, LogState
 
-
-
-#BTW in this case pydentic is not for model to fill member var but for validation of frontend sent data coz if endpoint is hit we only need txt and tone button form front end
 class RephraseRequest(BaseModel):
     text: str = Field(..., description="The raw, unformatted text to transform.")
     tone: Literal["rephrase", "professional", "casual", "executive", "simplified", "legal"] = Field(
@@ -32,26 +25,18 @@ class RephraseRequest(BaseModel):
             "- simplified: Free of dense jargon. Uses simple analogies so anyone can grasp it immediately.\n"
             "- legal: Highly precise, objective, authoritative, and formal. Minimizes ambiguity."
         )
-    ) #tbf since this class is only for validaion i did not rlly had to make it this detailed only text: str, tone: Litera[...] wouldve sufficed
+    )
     
     @field_validator("tone", mode="before") 
     @classmethod
     def normalize_tone(cls, v: Any) -> Any:
-        # Cleans up incoming tone parameters so messy strings don't trip up the Literal options
         return v.strip().lower() if isinstance(v, str) else v
     
     @field_validator("text", mode="before") 
     @classmethod
     def normalize_text(cls, v: Any) -> Any:
-        # Cleans up incoming text parameters safely by only removing trailing whitespace
         return v.strip() if isinstance(v, str) else v
 
-
-
-
-
-#above one was input validation this is what we want from model!
-# This is what we expect the AI model to generate.
 class RephraseOutput(BaseModel):
     text: str = Field(
         ...,
@@ -88,23 +73,12 @@ class RephraseOutput(BaseModel):
     @field_validator("confidence")
     @classmethod
     def clamp_confidence(cls, v: float) -> float:
-
         return max(0.0, min(v, 1.0))
-
-
-
-
-
 
 @traceable(name="initial_llm_call")
 async def call_llm(chain, text, tone):
     return await chain.ainvoke({"text": text, "tone": tone})
 
-
-
-
-
-#this file is fixed do to sentiemnet analysis what u did here! (u might wanna change APIResponce's error code to enum.value too asside form logs)
 @traceable(
     name="rephrase_pipeline",
     metadata={"route": "/rephrase"}
@@ -130,12 +104,9 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
                 "tone": tone
             }
         )
-
         text = validated_input.text
         tone = validated_input.tone
-
     except ValidationError as e:
-            #why not log excepion? well coz we know why this error! that excption log is for truly random exceptions
         log_state(SecurityLog.UNSUPPORTED_INPUT, function="rephraser", exc=e)
         log_state(ServiceLog.AI_SERVICE_FAILED, level=LogState.WARNING, function="rephraser", exc=e)
         log_state(ServiceLog.EXITING_AI_SERVICE, function="rephraser")
@@ -146,51 +117,12 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
             error_message=str(e)
         )
     
-    
-    
-    #If ur here form another service read friom be to bellow!
     intent_package: APIResponse = await get_user_intent(model=llm, text=text)
     if not intent_package.success:
         log_state(ServiceLog.AI_SERVICE_COMPLETED, function="rephraser")
         log_state(ServiceLog.EXITING_AI_SERVICE, function="rephraser")
-        return intent_package #why not return ApiResponce? well get_user_intent gives us api responce so intent_package is the apiresponce!
-    #also in get_user_intent, unknown, malicious_injection, is_appropriate(False) result in success=False 
-    #so we only continue if we succedded, else APIResponce with what error is given to route!
-    #i made get_user_intent return only APIResponce's success=False for all edge cases so no need to check them here
-    
-    
-    #This wont happen now, coz data is only none for each where success=False, and all of those have already been filtered
-    """
-    actual_intent: IntentUser | None = intent_package.data
-    if actual_intent is None:
-        return APIResponse(
-            success=False,
-            data=None,
-            error_code="NO_INTENT",
-            error_message="Intent classification failed"
-        )# why no AiServiceExeption? well coz this is a known error! look we knoe if actual intent is None -> we know!
-    """
-    
-    #no need to check for melishious, injection or appriate coz the where truned away!
-    
-        
-    #READ TOP OF INTENT_CLASSIFIER TO KNOW WHY THIS IS COMMENTED OUT!    
-    # if actual_intent.intent != "rephrase" and actual_intent.confidence > 0.85:
-    #     logger.info(
-    #         f"Expected rephrase, got {actual_intent.intent}"
-    #     )
-        
-    # if actual_intent.intent != "rephrase":
-    #     return APIResponse(
-    #         success=False,
-    #         data=None,
-    #         error_code="WRONG_INTENT",
-    #         error_message="Request does not match rephrase."
-    #     )
+        return intent_package
 
-
-    
-    
     examples = [
         {
             "input": """
@@ -212,7 +144,6 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     }
     """
         },
-
         {
             "input": """
     USER CONTENT:
@@ -233,7 +164,6 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     }
     """
         },
-
         {
             "input": """
     USER CONTENT:
@@ -254,7 +184,6 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     }
     """
         },
-
         {
             "input": """
     USER CONTENT:
@@ -275,7 +204,6 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     }
     """
         },
-
         {
             "input": """
     USER CONTENT:
@@ -296,7 +224,6 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     }
     """
         },
-
         {
             "input": """
     USER CONTENT:
@@ -318,8 +245,6 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     """
         }]
         
-    
-    
     template = r"""
     You are a professional backend text-editing engine.
 
@@ -364,7 +289,6 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     </content>
     """
     
-    
     structured_model = llm.with_structured_output(RephraseOutput, include_raw=True)
     parser = PydanticOutputParser(pydantic_object=RephraseOutput)
     example_prompt = ChatPromptTemplate.from_messages(
@@ -386,9 +310,8 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     chain = prompt | structured_model
     
     try:
-        log_state(ProviderLog.AI_PROVIDER_REQUEST, function="rephraser") #provider cause i call groq's llm 
+        log_state(ProviderLog.AI_PROVIDER_REQUEST, function="rephraser") 
         log_state(ProviderLog.AI_PROVIDER_IN_PROCESSING, function="rephraser")
-        
         result = await call_llm(chain, text, tone)
     except Exception as e:
         if check_provider_quota(e):
@@ -405,26 +328,14 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
             log_state(ProviderLog.AI_PROVIDER_FAILURE, level=LogState.EXCEPTION, function="rephraser", exc=e)
             log_state(ServiceLog.AI_SERVICE_FAILED, function="rephraser")
             log_state(ServiceLog.EXITING_AI_SERVICE, function="rephraser")
-            
-            #new: (but why we raise is same!) [if the error is not quota realted  then it is system error]
             raise AIServiceException(
                 error_code=SYSTEM_ERROR_CODES.AI_SERVICE_FAILURE.value,
                 message="AI processing failed during initial generation"
-            ) from e #from e carries what origanlly be the exeption type
+            ) from e
         
     log_state(ProviderLog.AI_PROVIDER_SUCCESS, level=LogState.INFO, function="rephraser")
-    #old:
-    r"""
-    #why we raise:
-    raise  #why not APIRespocnce? well coz current exception only is used to check for check_provider_quota!
-            #when if happens we pass to APIResponse but look in try we have call_llm! which can result in many issues
-                #like AttributeError, ConnectionError etc -> we need these for debugging!
-                    #thats why it is imp! but they can halt the system so look new method and go in core folder read why new works!
-                        #but trandeoffs of the Api responce contract! --eq(z)
-"""
 
-    #parsed: (read in intent_classifer wht i pulled u out)
-    parsed = getattr(result, "parsed", None) #the with_structured_output's output
+    parsed = getattr(result, "parsed", None) 
     if parsed is None and isinstance(result, dict):
         parsed = result.get("parsed")
 
@@ -434,27 +345,16 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
             "confidence",
             "stylistic_explanation",
             "is_meaning_preserved"
-        } #always check for all keys in service schame above class!
+        }
 
         if not required_keys.issubset(parsed.keys()):
             parsed = None
-    #we dont exception here! we allow it to fail so things can go into raw's hand!
 
     if parsed is not None and not isinstance(parsed, (dict, RephraseOutput)):
         parsed = None
 
     extracted_parsed: RephraseOutput | None = extract_parsed_data(parsed, RephraseOutput) 
     if extracted_parsed:
-        # if not validated_intent.is_appropriate:
-        #     return APIResponse(
-        #         success=False,
-        #         data=None,
-        #         error_code="INAPPROPRIATE_CONTENT",
-        #         error_message="The provided text was flagged as potentially unsafe, a prompt injection, or unreadable."
-        #     )
-        #NO NEED FOR THIS CHECK COZ WE NOW USE INTENT CLASSIFER TO FILTER INAPPROIATE SUFF OUT AHEAD OF TIME
-
-        #either i get validated obj, or None, if None i send it to raw!
         log_state(ServiceLog.AI_SERVICE_COMPLETED, function="rephraser")
         log_state(ServiceLog.AI_SERVICE_ENDED, function="rephraser")
         log_state(ServiceLog.EXITING_AI_SERVICE, function="rephraser")
@@ -464,13 +364,10 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
             error_code=None,
             error_message=None
         )
-    #parsed dont get a raise we allow it to fail so it can go into manaual
+
     if extracted_parsed is None:
         log_state(RepairLog.AI_REPAIR_INITIALIZED, function="rephraser")
 
-
-
-    #raw: (read in inteat_classifer why i pulled it out)
     raw = getattr(result, "raw", None)
     if raw is None and isinstance(result, dict):
         raw = result.get("raw")
@@ -488,15 +385,13 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
     try:
         log_state(RepairLog.AI_REPAIR_STARTED, function="rephraser")  
         log_state(RepairLog.AI_REPAIR_IN_PROGRESS, function="rephraser") 
-        extracted_raw_and_fixed: RephraseOutput | None = await extract_raw_data(raw,parser,llm,text,RephraseOutput) #--eq(x) is loaded here and it is in ApiResponce bellow
-
-    except Exception as e: #see  the reason exception is here is coz extract_raw_data calls safe_parse and that calls llm so chace of some other exception is high
+        extracted_raw_and_fixed: RephraseOutput | None = await extract_raw_data(raw,parser,llm,text,RephraseOutput)
+    except Exception as e:
         if check_provider_quota(e):
             log_state(ServiceLog.AI_MY_QUOTA_REACHED, level=LogState.EXCEPTION, function="rephraser", exc=e)
             log_state(RepairLog.AI_REPAIR_PREMATURELY_ENDED, function="rephraser")    
             log_state(ServiceLog.AI_SERVICE_FAILED, function="rephraser")
             log_state(ServiceLog.EXITING_AI_SERVICE, function="rephraser")    
-            
             return APIResponse(
                 success=False,
                 data=None,
@@ -507,15 +402,11 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
             log_state(RepairLog.AI_REPAIR_PREMATURELY_ENDED, level=LogState.EXCEPTION, function="rephraser", exc=e)
             log_state(ServiceLog.AI_SERVICE_FAILED, function="rephraser")
             log_state(ServiceLog.EXITING_AI_SERVICE, function="rephraser")
-            #if extract_raw_data() throws issue we have this unexpected issue handeler
-            raise AIServiceException( #--eq(z) same reason
+            raise AIServiceException(
                 error_code=SYSTEM_ERROR_CODES.AI_SERVICE_FAILURE.value,
                 message="AI output recovery process failed"
                 ) from e
 
-
-
-    #if no issues then we move, no issue doesnt mean not None! we gotta check that too
     if extracted_raw_and_fixed is None:
         log_state(RepairLog.AI_REPAIR_FAILED, function="rephraser")
         log_state(ServiceLog.AI_SERVICE_FAILED, function="rephraser")
@@ -523,7 +414,7 @@ async def rephraser(llm, text: str, tone: str) -> APIResponse:
         return APIResponse(
             success=False,
             data=None,
-            error_code=SYSTEM_ERROR_CODES.RAW_REPAIR_FAILURE.value, #.value is only enum class thing! noramlly class_name.member_var is enough 
+            error_code=SYSTEM_ERROR_CODES.RAW_REPAIR_FAILURE.value, 
             error_message="Structured output parsing failed and manual recovery returned no result."
         )
         

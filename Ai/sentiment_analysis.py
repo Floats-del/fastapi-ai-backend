@@ -1,6 +1,3 @@
-#NOOOOOO MOREEEEE ALTERATION NEEEEDEDDD! (im fully fixed now!)
-
-
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
@@ -73,10 +70,10 @@ async def sentiment_analysis_ai(model, text: str) -> APIResponse:
             error_message="Input text is empty"
         )
     
-    #go read Rephase form extaly here to know why code looks small here lol
+    
     intent_package: APIResponse = await get_user_intent(model, text)
     if not intent_package.success:
-        return intent_package #why not return ApiResponce? well get_user_intent gives us api responce so intent_package is the apiresponce!
+        return intent_package 
         
         
     structured_model = model.with_structured_output(SentimentAnalysis, include_raw=True)

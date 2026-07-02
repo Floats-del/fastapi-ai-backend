@@ -11,6 +11,6 @@ def setup_logging():
 
     logger = logging.getLogger("ai_saas")
     logger.setLevel(logging.INFO)
-    logger.handlers.clear()      # avoid duplicate handlers
+    logger.handlers.clear()      # 
     logger.addHandler(handler)
     logger.propagate = False

@@ -21,11 +21,11 @@ class LikeSchema(BaseModel):
     post_id: int
     dir: Literal[0, 1]  
 
-# --- New Comment Payloads ---
+#  New Comment Payloads 
 class CommentCreateSchema(BaseModel):
     text: str = Field(..., max_length=1000, description="The message content of the comment")
 
-# --- Outgoing Response Layouts ---
+#  Outgoing Response Layouts 
 class UserResponseSchema(BaseModel):
     email: EmailStr
     user_id: int 
@@ -58,10 +58,7 @@ class PostLikesOutSchema(BaseModel):
     post: PostResponseSchema 
     likes: int 
     model_config = {"from_attributes": True}
-"""
-from_attributes=True (which was called orm_mode=True in Pydantic v1) allows Pydantic to read ORM models or arbitrary objects (like SQLAlchemy model instances) and turn them into a Pydantic object.
-It lets Pydantic extract data from object attributes (using dot notation like user.text) instead of just looking for dictionary keys (like user["text"]).
-"""
+
 
 
 
@@ -179,13 +176,12 @@ class LogContext(BaseModel):
 
     # Errors
     exception: Exception  | None = None
-    exception_type: str | None = None #used alongside where we did exception=str(e) then we do exception_type=type(e).__name__
-        #where .__name__ tell which kind of exception obj ;)
+    exception_type: str | None = None
+        
 
 
 
-#helper classes:
-#helper class for AiUsageTrackerTable, (what if groq's server down? mine will throw 500 and since as soon as route called due to dependacy user's 24 gone, now 500 form groq and user get nothing) handler
+
 class AIRequestState(str, enum.Enum):
     PENDING = "pending"
     COMPLETED = "completed"
